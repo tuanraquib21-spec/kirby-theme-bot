@@ -137,12 +137,12 @@ function Home() {
         </h1>
 
         <p className="text-lg text-muted-foreground mb-3 max-w-md">
-          Owned by <span className="text-primary font-semibold">RealAsh</span> &nbsp;&middot;&nbsp; Created by <span className="text-accent font-semibold">Aipy</span>
+          Owned by <span className="text-primary font-semibold">RealAsh</span> &nbsp;&middot;&nbsp; Created by <span className="text-accent font-semibold">Alpy</span>
         </p>
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-10 bg-white/5 border border-white/10 rounded-full px-5 py-2.5">
           <Sparkles size={14} className="text-secondary animate-pulse-glow" />
-          Add <strong className="text-primary mx-1">dsc.gg/ashura</strong> to your status for a special role
+          Add <strong className="text-primary mx-1">dsc.gg/ashuracommunity</strong> to your status for a special role
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
