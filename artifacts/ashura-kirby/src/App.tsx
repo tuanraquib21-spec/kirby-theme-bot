@@ -1,188 +1,343 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Star, Cloud, Sparkles, Heart, ShieldAlert, BookOpen, Quote, MessagesSquare, Users, ImageMinus, Ban, HandHeart, CopyX } from "lucide-react";
-import bannerImg from "@assets/image_1780234764214.png";
-import { ReactNode } from "react";
+import { Star, Download, ExternalLink, Shield, ChevronRight, Sparkles } from "lucide-react";
+import bannerImg from "@assets/image_1597014d_1780235067184.png";
 
 const queryClient = new QueryClient();
 
 const rules = [
-  {
-    num: 1,
-    title: "Realm Standard Language",
-    desc: "Communications within public channels must be in English.",
-    icon: <MessagesSquare className="text-blue-400" size={28} />,
-    color: "bg-blue-100"
-  },
-  {
-    num: 2,
-    title: "Sanctity of All Users",
-    desc: "Treat everyone with unwavering respect. No exceptions.",
-    icon: <Heart className="text-pink-400" size={28} />,
-    color: "bg-pink-100"
-  },
-  {
-    num: 3,
-    title: "Restricted Doctrines",
-    desc: "No advertisement or self-promotion of outside guilds, servers, or personal ventures.",
-    icon: <Ban className="text-red-400" size={28} />,
-    color: "bg-red-100"
-  },
-  {
-    num: 4,
-    title: "Zero Discrimination",
-    desc: "Prejudice of any kind is an immediate exile.",
-    icon: <ShieldAlert className="text-orange-400" size={28} />,
-    color: "bg-orange-100"
-  },
-  {
-    num: 5,
-    title: "No Profane Imagery",
-    desc: "NSFW or gory material is banned. This applies to avatars, statuses, and links.",
-    icon: <ImageMinus className="text-purple-400" size={28} />,
-    color: "bg-purple-100"
-  },
-  {
-    num: 6,
-    title: "Restricted Language",
-    desc: "Slurs are permitted only if you are reclaiming them and possess the bypass role. Exploiting this will result in loss of role.",
-    icon: <Quote className="text-teal-400" size={28} />,
-    color: "bg-teal-100"
-  },
-  {
-    num: 7,
-    title: "The Great Taboo",
-    desc: "Sexual jokes involving themes of violation, unwanted touching, or lack of consent are permanently forbidden.",
-    icon: <HandHeart className="text-rose-400" size={28} />,
-    color: "bg-rose-100"
-  },
-  {
-    num: 8,
-    title: "Code of Originality",
-    desc: "Do not replicate, plagiarize, or heavily take inspiration from ashura.",
-    icon: <CopyX className="text-indigo-400" size={28} />,
-    color: "bg-indigo-100"
-  }
+  { num: 1, title: "Realm Standard Language", desc: "Communications within public channels must be in English." },
+  { num: 2, title: "Sanctity of All Users", desc: "Treat everyone with unwavering respect. No exceptions." },
+  { num: 3, title: "Restricted Doctrines", desc: "No advertisement or self-promotion of outside guilds, servers, or personal ventures." },
+  { num: 4, title: "Zero Discrimination", desc: "Prejudice of any kind is an immediate exile." },
+  { num: 5, title: "No Profane Imagery", desc: "NSFW or gory material is banned. This applies to avatars, statuses, and links." },
+  { num: 6, title: "Restricted Language", desc: "Slurs are permitted only if you are reclaiming them and possess the bypass role. Exploiting this will result in loss of role." },
+  { num: 7, title: "The Great Taboo", desc: "Sexual jokes involving themes of violation, unwanted touching, or lack of consent are permanently forbidden." },
+  { num: 8, title: "Code of Originality", desc: "Do not replicate, plagiarize, or heavily take inspiration from ashura." },
 ];
 
-function FloatingBackground() {
+function StarField() {
+  const stars = Array.from({ length: 28 }, (_, i) => ({
+    id: i,
+    x: Math.round((i * 137.5) % 100),
+    y: Math.round((i * 97.3) % 100),
+    size: [10, 14, 18, 12][i % 4],
+    dur: [3, 4, 5, 2.5, 3.5][i % 5],
+    delay: (i * 0.37) % 4,
+  }));
+
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <Star className="absolute top-[10%] left-[15%] text-secondary animate-float opacity-70" size={64} fill="currentColor" />
-      <Cloud className="absolute top-[20%] right-[10%] text-white animate-float-slow opacity-80" size={96} fill="currentColor" />
-      <Sparkles className="absolute top-[40%] left-[5%] text-accent animate-pulse-soft opacity-60" size={48} />
-      <Star className="absolute top-[60%] right-[20%] text-secondary animate-float-fast opacity-50" size={56} fill="currentColor" />
-      <Cloud className="absolute bottom-[20%] left-[10%] text-white animate-float-slow opacity-90" size={120} fill="currentColor" />
-      <Heart className="absolute bottom-[30%] right-[15%] text-primary animate-float opacity-40" size={40} fill="currentColor" />
-      <Star className="absolute bottom-[10%] left-[40%] text-yellow-300 animate-pulse-soft opacity-80" size={32} fill="currentColor" />
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* radial glow blobs */}
+      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full"
+        style={{ background: "radial-gradient(ellipse, rgba(255,92,141,0.18) 0%, transparent 70%)" }} />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[400px] rounded-full"
+        style={{ background: "radial-gradient(ellipse, rgba(200,162,232,0.12) 0%, transparent 70%)" }} />
+
+      {/* grid */}
+      <div className="absolute inset-0 grid-bg opacity-100" />
+
+      {/* stars */}
+      {stars.map(s => (
+        <svg
+          key={s.id}
+          className="absolute star-particle"
+          style={{
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: s.size,
+            height: s.size,
+            "--duration": `${s.dur}s`,
+            "--delay": `${s.delay}s`,
+          } as React.CSSProperties}
+          viewBox="0 0 20 20"
+        >
+          <polygon
+            points="10,1 12.5,8 19,8 14,12.5 16,19 10,15 4,19 6,12.5 1,8 7.5,8"
+            fill={s.id % 3 === 0 ? "#FFD700" : s.id % 3 === 1 ? "#ff5c8d" : "#c8a2e8"}
+            opacity="0.7"
+          />
+        </svg>
+      ))}
     </div>
+  );
+}
+
+function Navbar() {
+  return (
+    <nav className="navbar px-6 py-4">
+      <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <svg width="24" height="24" viewBox="0 0 20 20" className="text-primary">
+            <polygon
+              points="10,1 12.5,8 19,8 14,12.5 16,19 10,15 4,19 6,12.5 1,8 7.5,8"
+              fill="#ff5c8d"
+            />
+          </svg>
+          <span className="font-display font-700 text-lg text-white tracking-tight">/ashura</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href="#rules"
+            className="text-sm font-medium text-muted-foreground hover:text-white transition-colors hidden sm:block"
+          >
+            Rules
+          </a>
+          <a
+            href="#theme"
+            className="text-sm font-medium text-muted-foreground hover:text-white transition-colors hidden sm:block"
+          >
+            BD Theme
+          </a>
+          <a
+            href="https://dsc.gg/ashura"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary text-sm !py-2 !px-5 !text-base"
+          >
+            Join
+          </a>
+        </div>
+      </div>
+    </nav>
   );
 }
 
 function Home() {
   return (
-    <div className="min-h-[100dvh] relative w-full flex flex-col items-center">
-      <FloatingBackground />
-      
-      <main className="relative z-10 w-full max-w-5xl px-4 py-16 flex flex-col items-center gap-16">
-        
-        {/* Hero Section */}
-        <section className="flex flex-col items-center text-center gap-8 w-full">
-          <div className="relative animate-float-slow group">
-            <div className="absolute -inset-2 bg-white rounded-[3rem] blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-500"></div>
-            <img 
-              src={bannerImg} 
-              alt="Ashura Server Banner" 
-              className="relative w-full max-w-3xl rounded-[3rem] border-[12px] border-white shadow-2xl object-cover aspect-[21/9]"
-            />
-          </div>
+    <div className="min-h-screen relative w-full">
+      <StarField />
+      <Navbar />
 
-          <div className="space-y-4">
-            <h1 className="text-6xl md:text-8xl font-black text-primary tracking-tight" style={{ textShadow: '0 4px 0 #fff, 0 8px 0 rgba(0,0,0,0.1)' }}>
-              /ashura
-            </h1>
-            <p className="text-xl md:text-2xl font-bold text-foreground/80 max-w-lg mx-auto leading-relaxed">
-              Owned by <span className="text-primary">RealAsh</span> &bull; Created by <span className="text-accent">Aipy</span>
+      {/* ── HERO ── */}
+      <section className="hero-gradient relative z-10 pt-32 pb-24 px-4 flex flex-col items-center text-center">
+        <div className="section-label mb-8 justify-center">
+          <span>Welcome to Dream Land</span>
+        </div>
+
+        {/* Banner */}
+        <div className="relative w-full max-w-4xl mx-auto mb-10 glow-pink rounded-3xl overflow-hidden drift">
+          <img
+            src={bannerImg}
+            alt="Ashura Server Banner"
+            className="w-full h-auto block"
+            style={{ borderRadius: "24px" }}
+          />
+          <div className="absolute inset-0 rounded-3xl" style={{
+            background: "linear-gradient(180deg, transparent 60%, rgba(10,4,18,0.8) 100%)"
+          }} />
+        </div>
+
+        <h1
+          className="text-6xl md:text-8xl lg:text-9xl font-bold text-white tracking-tight leading-none mb-4 text-glow-white"
+          style={{ fontFamily: "var(--app-font-display)" }}
+        >
+          /ashura
+        </h1>
+
+        <p className="text-lg text-muted-foreground mb-3 max-w-md">
+          Owned by <span className="text-primary font-semibold">RealAsh</span> &nbsp;&middot;&nbsp; Created by <span className="text-accent font-semibold">Aipy</span>
+        </p>
+
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-10 bg-white/5 border border-white/10 rounded-full px-5 py-2.5">
+          <Sparkles size={14} className="text-secondary animate-pulse-glow" />
+          Add <strong className="text-primary mx-1">dsc.gg/ashura</strong> to your status for a special role
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <a
+            href="https://dsc.gg/ashura"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20">
+              <polygon points="10,1 12.5,8 19,8 14,12.5 16,19 10,15 4,19 6,12.5 1,8 7.5,8" fill="currentColor" />
+            </svg>
+            Join the Server
+            <ChevronRight size={18} />
+          </a>
+          <a href="#rules" className="btn-secondary">
+            View Rules
+          </a>
+        </div>
+      </section>
+
+      {/* ── STATS BAR ── */}
+      <div className="relative z-10 border-y border-border/40 bg-card/30 backdrop-blur-sm py-6 px-4">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-4 text-center">
+          {[
+            { label: "Owner", value: "RealAsh" },
+            { label: "Since", value: "2026" },
+            { label: "Invite", value: "dsc.gg/ashura" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <div className="text-xl font-bold text-white" style={{ fontFamily: "var(--app-font-display)" }}>
+                {stat.value}
+              </div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RULES ── */}
+      <section id="rules" className="relative z-10 py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <div className="section-label justify-center mb-4"><span>The Realm Codex</span></div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--app-font-display)" }}>
+              Server Rules
+            </h2>
+            <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+              By entering this realm, you agree to uphold our sacred principles.
             </p>
           </div>
 
-          <a 
-            href="https://dsc.gg/ashura" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="kirby-btn mt-6 inline-flex items-center gap-3 bg-primary text-white text-2xl md:text-3xl font-black px-12 py-6 rounded-full border-4 border-white"
-          >
-            <Star size={32} fill="currentColor" className="animate-pulse-soft" />
-            Join the Server!
-            <Star size={32} fill="currentColor" className="animate-pulse-soft" />
-          </a>
-
-          <div className="mt-8 bg-white/60 backdrop-blur-md px-8 py-4 rounded-full border-4 border-white shadow-sm inline-flex items-center gap-3">
-            <Sparkles className="text-secondary" fill="currentColor" />
-            <span className="text-lg font-bold text-foreground">
-              Add <strong className="text-primary">dsc.gg/ashura</strong> to your status to get a special role!
-            </span>
-          </div>
-        </section>
-
-        {/* Rules Section */}
-        <section className="w-full mt-12 flex flex-col items-center gap-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl md:text-6xl font-black text-white" style={{ textShadow: '0 4px 0 hsl(var(--primary)), 0 6px 12px rgba(0,0,0,0.1)' }}>
-              Server Rules
-            </h2>
-            <p className="text-xl font-bold text-primary/80">Please read carefully before joining our dream land!</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {rules.map((rule) => (
-              <div key={rule.num} className="kirby-card bg-card p-8 rounded-[2.5rem] relative flex flex-col gap-4">
-                <div className="absolute -top-6 -left-6 w-16 h-16 bg-white rounded-full flex items-center justify-center font-black text-3xl text-primary border-4 border-card-border shadow-md">
-                  {rule.num}
+              <div
+                key={rule.num}
+                className="gradient-border group hover:scale-[1.015] transition-transform duration-200 p-6"
+              >
+                <div className="flex items-start gap-4">
+                  <span className="rule-num shrink-0 mt-0.5">0{rule.num}</span>
+                  <div>
+                    <h3 className="font-semibold text-white text-base mb-1.5 leading-snug"
+                      style={{ fontFamily: "var(--app-font-display)", fontSize: "1.05rem" }}>
+                      {rule.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{rule.desc}</p>
+                  </div>
                 </div>
-                <div className={`absolute top-6 right-6 w-12 h-12 rounded-full flex items-center justify-center ${rule.color}`}>
-                  {rule.icon}
-                </div>
-                <h3 className="text-2xl font-black text-foreground mt-2 pr-12 leading-tight">
-                  {rule.title}
-                </h3>
-                <p className="text-lg font-semibold text-muted-foreground leading-relaxed">
-                  {rule.desc}
-                </p>
               </div>
             ))}
           </div>
 
           {/* Final Directive */}
-          <div className="w-full mt-8 kirby-card bg-primary text-white p-10 rounded-[3rem] relative overflow-hidden">
-            <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-              <ShieldAlert size={200} />
-            </div>
-            <div className="relative z-10 flex flex-col gap-4 items-center text-center">
-              <div className="bg-white text-primary px-6 py-2 rounded-full font-black tracking-widest uppercase text-sm border-2 border-primary-foreground/20">
-                Final Directive
+          <div className="mt-8 relative overflow-hidden rounded-2xl border border-primary/30 p-8 text-center"
+            style={{ background: "linear-gradient(135deg, rgba(255,92,141,0.12) 0%, rgba(200,162,232,0.08) 100%)" }}>
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: "radial-gradient(circle at 50% 0%, rgba(255,92,141,0.15) 0%, transparent 60%)" }} />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 text-primary mb-4">
+                <Shield size={18} />
+                <span className="font-semibold text-sm tracking-wide uppercase" style={{ fontFamily: "var(--app-font-display)" }}>
+                  Final Directive
+                </span>
               </div>
-              <h3 className="text-2xl md:text-3xl font-black leading-tight max-w-3xl">
-                Adhere to Discord's official Terms of Service & Guidelines.
-              </h3>
-              <p className="text-xl font-bold text-white/90 max-w-2xl">
+              <p className="text-white font-semibold text-lg max-w-2xl mx-auto leading-relaxed mb-2"
+                style={{ fontFamily: "var(--app-font-display)" }}>
+                Adhere to Discord's official Terms of Service &amp; Guidelines.
+              </p>
+              <p className="text-muted-foreground text-sm max-w-xl mx-auto">
                 If the High Council (Staff) finds a loophole, they will close it with force.
               </p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-      </main>
+      {/* ── BETTERDISCORD THEME ── */}
+      <section id="theme" className="relative z-10 py-24 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="section-label justify-center mb-4"><span>Kirby Theme</span></div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--app-font-display)" }}>
+              BetterDiscord Skin
+            </h2>
+            <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+              Transform your Discord client into Dream Land. Full Kirby-themed UI — dark backgrounds, pink glows, star cursors, and more.
+            </p>
+          </div>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full bg-white/80 backdrop-blur-md py-8 mt-12 border-t-8 border-white text-center flex flex-col items-center gap-2">
-        <p className="font-bold text-foreground/60 text-lg">
-          &copy; /ashura &mdash; All rights reserved
-        </p>
-        <a href="https://dsc.gg/ashura" className="font-black text-primary hover:text-accent transition-colors text-xl">
-          dsc.gg/ashura
-        </a>
+          <div className="download-card">
+            {/* Preview dots */}
+            <div className="flex gap-1.5 mb-6">
+              <div className="w-3 h-3 rounded-full bg-red-500/60" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+              <div className="w-3 h-3 rounded-full bg-green-500/60" />
+            </div>
+
+            {/* Code preview */}
+            <div className="bg-black/40 rounded-xl p-5 mb-8 font-mono text-sm border border-white/5 overflow-x-auto">
+              <div className="text-muted-foreground">
+                <span className="text-accent">/**</span><br />
+                <span className="text-accent ml-2">* @name</span> <span className="text-primary">KirbyAshura</span><br />
+                <span className="text-accent ml-2">* @version</span> <span className="text-white">1.0.0</span><br />
+                <span className="text-accent ml-2">* @description</span> <span className="text-white">Kirby-themed Discord skin for /ashura</span><br />
+                <span className="text-accent">*/</span><br /><br />
+                <span className="text-muted-foreground/60">/* Deep purple-black backgrounds */</span><br />
+                <span className="text-secondary">--background-primary</span><span className="text-white">: </span><span className="text-primary">#1a0828</span><span className="text-white">;</span><br />
+                <span className="text-secondary">--brand-experiment</span><span className="text-white">: </span><span className="text-primary">#ff5c8d</span><span className="text-white">;</span><br />
+                <span className="text-muted-foreground/60">/* ...and much more */</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <a
+                href="/KirbyAshura.theme.css"
+                download="KirbyAshura.theme.css"
+                className="btn-primary flex-1 justify-center"
+              >
+                <Download size={20} />
+                Download Theme
+              </a>
+              <div className="text-muted-foreground text-sm text-center">
+                Requires <a
+                  href="https://betterdiscord.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  BetterDiscord <ExternalLink size={12} />
+                </a>
+                <br />
+                Place in <code className="text-accent bg-black/30 px-1 rounded">themes/</code> folder
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              {[
+                { label: "Background", color: "#1a0828" },
+                { label: "Primary", color: "#ff5c8d" },
+                { label: "Accent", color: "#c8a2e8" },
+                { label: "Stars", color: "#ffd700" },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex flex-col items-center gap-2">
+                  <div
+                    className="w-10 h-10 rounded-full border-2 border-white/10"
+                    style={{ background: color, boxShadow: `0 0 12px ${color}55` }}
+                  />
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 border-t border-border/40 py-12 px-4 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Star size={16} className="text-primary" fill="currentColor" />
+            <span className="font-bold text-white" style={{ fontFamily: "var(--app-font-display)" }}>/ashura</span>
+            <Star size={16} className="text-primary" fill="currentColor" />
+          </div>
+          <p className="text-muted-foreground text-sm mb-4">
+            A Dream Land community — all rights reserved.
+          </p>
+          <a
+            href="https://dsc.gg/ashura"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-accent transition-colors font-semibold text-sm"
+          >
+            dsc.gg/ashura
+          </a>
+        </div>
       </footer>
     </div>
   );

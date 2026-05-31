@@ -1,0 +1,262 @@
+/**
+ * @name KirbyAshura
+ * @author /ashura
+ * @version 1.0.0
+ * @description Kirby-themed Discord skin for the /ashura server. Soft pinks, dream land purples, and star-gold accents.
+ * @source https://dsc.gg/ashura
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+:root {
+  --kirby-pink:      #ff5c8d;
+  --kirby-rose:      #e84b7a;
+  --kirby-light:     #ffb7d4;
+  --kirby-yellow:    #ffd700;
+  --kirby-sky:       #a8d8f0;
+  --kirby-lilac:     #c8a2e8;
+  --kirby-deep:      #1a0828;
+  --kirby-mid:       #22103a;
+  --kirby-card:      #2e1648;
+  --kirby-border:    #5c2a78;
+  --kirby-text:      #f0d8ff;
+  --kirby-muted:     #9b74b8;
+}
+
+/* ── BACKGROUNDS ─────────────────────────────────── */
+.bg-1_CVbQ,
+[class*="bg-1_CVbQ"] { background-color: var(--kirby-deep) !important; }
+
+.bg-2ZuAzA,
+[class*="bg-2ZuAzA"] { background-color: var(--kirby-mid) !important; }
+
+/* Server list */
+nav[class*="wrapper"] {
+  background: linear-gradient(180deg, #1a0828 0%, #12051e 100%) !important;
+}
+
+/* Channel sidebar */
+nav[class*="sidebar"],
+aside[class*="sidebar"] {
+  background-color: var(--kirby-mid) !important;
+}
+
+/* Header / top bar */
+[class*="header-"] {
+  background-color: var(--kirby-mid) !important;
+  border-bottom: 1px solid var(--kirby-border) !important;
+}
+
+/* Chat area */
+[class*="chat-"] {
+  background-color: var(--kirby-deep) !important;
+}
+
+/* Member list */
+[class*="membersWrap"],
+[class*="members-"] {
+  background-color: var(--kirby-mid) !important;
+}
+
+/* ── DISCORD CSS VARIABLE OVERRIDES ──────────────── */
+.theme-dark,
+.theme-light {
+  /* Backgrounds */
+  --background-primary:       #1a0828 !important;
+  --background-secondary:     #22103a !important;
+  --background-secondary-alt: #1e0d32 !important;
+  --background-tertiary:      #12051e !important;
+  --background-accent:        #2e1648 !important;
+  --background-floating:      #2e1648 !important;
+  --background-mobile-primary:   #1a0828 !important;
+  --background-mobile-secondary: #22103a !important;
+
+  /* Text */
+  --text-normal:           #f0d8ff !important;
+  --text-muted:            #9b74b8 !important;
+  --text-link:             #ff9ed2 !important;
+  --header-primary:        #ffffff !important;
+  --header-secondary:      #c8a2e8 !important;
+  --interactive-normal:    #c8a2e8 !important;
+  --interactive-hover:     #f0d8ff !important;
+  --interactive-active:    #ffffff !important;
+  --interactive-muted:     #5c2a78 !important;
+
+  /* Brand color — replaces Discord blurple with Kirby pink */
+  --brand-experiment:              #ff5c8d !important;
+  --brand-experiment-100:          #fff0f5 !important;
+  --brand-experiment-130:          #ffd6e8 !important;
+  --brand-experiment-160:          #ffb3d1 !important;
+  --brand-experiment-200:          #ff8fb9 !important;
+  --brand-experiment-230:          #ff7aaa !important;
+  --brand-experiment-260:          #ff6699 !important;
+  --brand-experiment-300:          #ff5c8d !important;
+  --brand-experiment-330:          #f04d7d !important;
+  --brand-experiment-360:          #e03d6d !important;
+  --brand-experiment-400:          #c8265a !important;
+  --brand-experiment-430:          #b01848 !important;
+  --brand-experiment-460:          #980d38 !important;
+  --brand-experiment-500:          #800028 !important;
+  --brand-experiment-530:          #690020 !important;
+  --brand-experiment-560:          #520018 !important;
+  --brand-experiment-600:          #3c0010 !important;
+
+  /* Channels */
+  --channeltextarea-background:   #2e1648 !important;
+  --deprecated-card-bg:           #2e1648 !important;
+  --deprecated-store-bg:          #22103a !important;
+  --input-background:             #2e1648 !important;
+
+  /* Scrollbar */
+  --scrollbar-auto-track:         #1a0828 !important;
+  --scrollbar-auto-thumb:         #5c2a78 !important;
+  --scrollbar-thin-thumb:         #5c2a78 !important;
+
+  /* Borders */
+  --background-modifier-hover:    rgba(255, 92, 141, 0.08) !important;
+  --background-modifier-active:   rgba(255, 92, 141, 0.14) !important;
+  --background-modifier-selected: rgba(255, 92, 141, 0.18) !important;
+}
+
+/* ── MESSAGE INPUT ───────────────────────────────── */
+[class*="textArea-"],
+[class*="channelTextArea-"] {
+  background-color: #2e1648 !important;
+  border-radius: 16px !important;
+}
+
+[class*="innerWrapper-"] {
+  background-color: #2e1648 !important;
+}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+button[class*="colorBrand"],
+[class*="colorBrand"] {
+  background-color: var(--kirby-pink) !important;
+  border-radius: 999px !important;
+}
+
+button[class*="colorBrand"]:hover {
+  background-color: var(--kirby-rose) !important;
+}
+
+/* ── SERVER / CHANNEL NAMES ──────────────────────── */
+[class*="name-"] {
+  color: var(--kirby-text) !important;
+  font-family: 'Fredoka', sans-serif !important;
+}
+
+[class*="selected-"] [class*="name-"] {
+  color: #ffffff !important;
+}
+
+/* ── TOOLTIPS ────────────────────────────────────── */
+[class*="tooltip-"] {
+  background-color: var(--kirby-card) !important;
+  border: 1px solid var(--kirby-border) !important;
+  border-radius: 12px !important;
+  color: var(--kirby-text) !important;
+  font-family: 'Fredoka', sans-serif !important;
+}
+
+/* ── MENTIONS ────────────────────────────────────── */
+[class*="mention"] {
+  background: rgba(255, 92, 141, 0.18) !important;
+  color: #ff9ed2 !important;
+  border-radius: 6px !important;
+}
+
+/* ── ROLE PILLS ──────────────────────────────────── */
+[class*="roleCircle"] {
+  border-radius: 50% !important;
+}
+
+/* ── SERVER ICON PILL ────────────────────────────── */
+[class*="listItem-"] [class*="wrapper-"] {
+  border-radius: 50% !important;
+  transition: border-radius 0.2s ease !important;
+}
+[class*="listItem-"] [class*="wrapper-"]:hover {
+  border-radius: 35% !important;
+}
+
+/* ── EMOJI PICKER ────────────────────────────────── */
+[class*="emojiPicker-"] {
+  background-color: var(--kirby-card) !important;
+  border: 1px solid var(--kirby-border) !important;
+  border-radius: 20px !important;
+}
+
+/* ── REACTIONS ───────────────────────────────────── */
+[class*="reaction-"] {
+  background-color: #2e1648 !important;
+  border: 1px solid var(--kirby-border) !important;
+  border-radius: 999px !important;
+}
+
+[class*="reaction-"][class*="reactionMe-"] {
+  background-color: rgba(255, 92, 141, 0.2) !important;
+  border-color: var(--kirby-pink) !important;
+}
+
+/* ── CONTEXT MENUS ───────────────────────────────── */
+[class*="menu-"] {
+  background-color: var(--kirby-card) !important;
+  border: 1px solid var(--kirby-border) !important;
+  border-radius: 16px !important;
+  padding: 6px !important;
+}
+
+[class*="item-"][class*="focused-"] {
+  background-color: rgba(255, 92, 141, 0.15) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+}
+
+/* ── MODALS ──────────────────────────────────────── */
+[class*="modal-"],
+[class*="root-"][class*="small-"],
+[class*="root-"][class*="medium-"],
+[class*="root-"][class*="large-"] {
+  background-color: var(--kirby-mid) !important;
+  border: 1px solid var(--kirby-border) !important;
+  border-radius: 24px !important;
+}
+
+[class*="header-"][class*="defaultColor-"] {
+  background-color: var(--kirby-card) !important;
+  border-bottom: 1px solid var(--kirby-border) !important;
+}
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--kirby-deep); border-radius: 4px; }
+::-webkit-scrollbar-thumb {
+  background: var(--kirby-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--kirby-pink);
+}
+
+/* ── PINK GLOW ON ACTIVE CHANNEL ─────────────────── */
+[class*="selected-"][class*="channel-"],
+[class*="modeSelected-"] {
+  background: rgba(255, 92, 141, 0.18) !important;
+  border-radius: 10px !important;
+}
+
+[class*="selected-"] [class*="icon-"],
+[class*="modeSelected-"] [class*="icon-"] {
+  color: var(--kirby-pink) !important;
+}
+
+/* ── USER STATUS AREA ────────────────────────────── */
+[class*="panels-"],
+[class*="panel-"] {
+  background-color: #12051e !important;
+  border-top: 1px solid var(--kirby-border) !important;
+}
+
+/* ── KIRBY STAR CURSOR (optional fun touch) ─────── */
+* { cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><polygon points='8,1 10,6 15,6 11,9.5 12.5,15 8,11.5 3.5,15 5,9.5 1,6 6,6' fill='%23FFD700' stroke='%23ff5c8d' stroke-width='1'/></svg>"), auto !important; }
