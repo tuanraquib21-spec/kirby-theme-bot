@@ -5,6 +5,7 @@ import {
   REST,
   Routes,
   type Interaction,
+  type GuildMember,
   EmbedBuilder,
   SlashCommandBuilder,
 } from "discord.js";
@@ -25,6 +26,46 @@ const RULES = [
   { num: 8, title: "The Code of Originality", desc: "Do not replicate, plagiarize, or heavily take inspiration from ashura." },
 ];
 
+function buildWelcomeEmbed(member: GuildMember) {
+  return new EmbedBuilder()
+    .setTitle("✨ Welcome to Dream Land!")
+    .setDescription(
+      `Hey ${member.user.username}, you just landed in **/ashura** — a cozy corner of the internet owned by **RealAsh**.\n\n` +
+      `We're glad you're here! Here's everything you need to get started:`
+    )
+    .setColor(0xFF5C8D)
+    .setThumbnail(member.user.displayAvatarURL({ size: 256 }))
+    .addFields(
+      {
+        name: "📜 Read the Rules",
+        value: "Use `/rules` in the server to see the sacred principles of Dream Land. Breaking them has consequences.",
+        inline: false,
+      },
+      {
+        name: "⭐ Get a Special Role",
+        value: "Add **dsc.gg/ashuracommunity** to your Discord status and you'll earn a special Kirby-themed role!",
+        inline: false,
+      },
+      {
+        name: "😄 Kirby Emojis",
+        value: "Use `/emojis` to see all the custom Kirby emojis available — use them freely in any channel.",
+        inline: false,
+      },
+      {
+        name: "🔗 Invite Friends",
+        value: "[dsc.gg/ashura](https://dsc.gg/ashura)",
+        inline: true,
+      },
+      {
+        name: "🌐 Website",
+        value: "[Visit /ashura](https://dsc.gg/ashura)",
+        inline: true,
+      },
+    )
+    .setFooter({ text: "Owned by RealAsh • Created by Alpy • /ashura" })
+    .setTimestamp();
+}
+
 async function registerCommands() {
   if (!TOKEN || !GUILD_ID) return;
   const rest = new REST().setToken(TOKEN);
@@ -41,6 +82,10 @@ async function registerCommands() {
       .setName("server")
       .setDescription("Show /ashura server info and stats")
       .toJSON(),
+    new SlashCommandBuilder()
+      .setName("welcome")
+      .setDescription("Preview the welcome DM that new members receive")
+      .toJSON(),
   ];
   try {
     await rest.put(Routes.applicationGuildCommands(APP_ID, GUILD_ID), { body: commands });
@@ -56,11 +101,28 @@ export function startDiscordBot() {
     return;
   }
 
-  const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildEmojisAndStickers] });
+  const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildEmojisAndStickers,
+      GatewayIntentBits.GuildMembers,
+    ],
+  });
 
   client.once(Events.ClientReady, async (c) => {
     logger.info({ tag: c.user.tag }, "Discord bot connected");
     await registerCommands();
+  });
+
+  client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
+    if (member.guild.id !== GUILD_ID) return;
+    try {
+      const embed = buildWelcomeEmbed(member);
+      await member.send({ embeds: [embed] });
+      logger.info({ userId: member.id, username: member.user.username }, "Welcome DM sent");
+    } catch (err) {
+      logger.warn({ userId: member.id, err }, "Could not send welcome DM (user may have DMs disabled)");
+    }
   });
 
   client.on(Events.InteractionCreate, async (interaction: Interaction) => {
@@ -132,6 +194,17 @@ export function startDiscordBot() {
         .setFooter({ text: "Owned by RealAsh • Created by Alpy" });
 
       await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    if (interaction.commandName === "welcome") {
+      const member = interaction.member as GuildMember;
+      const embed = buildWelcomeEmbed(member);
+      await interaction.reply({
+        content: "📬 Here's a preview of the welcome DM new members receive:",
+        embeds: [embed],
+        ephemeral: true,
+      });
       return;
     }
   });
