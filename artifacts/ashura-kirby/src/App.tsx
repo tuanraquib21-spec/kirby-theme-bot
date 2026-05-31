@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Star, Download, ExternalLink, Shield, ChevronRight, Sparkles } from "lucide-react";
+import { Star, Download, ExternalLink, Shield, ChevronRight, Sparkles, Users, Wifi } from "lucide-react";
 import bannerImg from "@assets/image_1597014d_1780235067184.png";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,59 @@ const rules = [
   { num: 7, title: "The Great Taboo", desc: "Sexual jokes involving themes of violation, unwanted touching, or lack of consent are permanently forbidden." },
   { num: 8, title: "Code of Originality", desc: "Do not replicate, plagiarize, or heavily take inspiration from ashura." },
 ];
+
+interface DiscordStats {
+  name: string;
+  memberCount: number;
+  onlineCount: number;
+  icon: string | null;
+}
+
+function DiscordWidget() {
+  const [stats, setStats] = useState<DiscordStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}api/discord-stats`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setStats(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="flex items-center gap-5 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 backdrop-blur-sm">
+      {loading ? (
+        <div className="flex gap-4 animate-pulse">
+          <div className="w-24 h-8 bg-white/10 rounded-lg" />
+          <div className="w-24 h-8 bg-white/10 rounded-lg" />
+        </div>
+      ) : stats ? (
+        <>
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-primary" />
+            <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--app-font-display)" }}>
+              {stats.memberCount.toLocaleString()}
+            </span>
+            <span className="text-muted-foreground text-sm">members</span>
+          </div>
+          <div className="w-px h-6 bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse-glow" />
+            <span className="text-white font-bold text-lg" style={{ fontFamily: "var(--app-font-display)" }}>
+              {stats.onlineCount.toLocaleString()}
+            </span>
+            <span className="text-muted-foreground text-sm">online</span>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Wifi size={14} />
+          <span>Join dsc.gg/ashura</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StarField() {
   const stars = Array.from({ length: 28 }, (_, i) => ({
@@ -140,12 +194,14 @@ function Home() {
           Owned by <span className="text-primary font-semibold">RealAsh</span> &nbsp;&middot;&nbsp; Created by <span className="text-accent font-semibold">Alpy</span>
         </p>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-10 bg-white/5 border border-white/10 rounded-full px-5 py-2.5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 bg-white/5 border border-white/10 rounded-full px-5 py-2.5">
           <Sparkles size={14} className="text-secondary animate-pulse-glow" />
           Add <strong className="text-primary mx-1">dsc.gg/ashuracommunity</strong> to your status for a special role
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <DiscordWidget />
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
           <a
             href="https://dsc.gg/ashura"
             target="_blank"

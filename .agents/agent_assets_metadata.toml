@@ -1,0 +1,50 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "19iGxiOMAs62bXs1BMqat"
+uri = "file://attached_assets/emojis/kirby_happy.png"
+type = "image"
+title = "kirby happy emoji"
+
+[[generated]]
+id = "0Tb7zwFiF4ClcZQZYgnHV"
+uri = "file://attached_assets/emojis/kirby_wave.png"
+type = "image"
+title = "kirby wave emoji"
+
+[[generated]]
+id = "OAVC_TfwctSMeLiTfpF80"
+uri = "file://attached_assets/emojis/kirby_sleep.png"
+type = "image"
+title = "kirby sleep emoji"
+
+[[generated]]
+id = "E12Pjn66kYK4ympxF3YIi"
+uri = "file://attached_assets/emojis/kirby_star.png"
+type = "image"
+title = "kirby star emoji"
+
+[[generated]]
+id = "qn-cfl4pXzgvGAGeqSHiU"
+uri = "file://attached_assets/emojis/kirby_heart.png"
+type = "image"
+title = "kirby heart emoji"
+
+[[generated]]
+id = "lTRAyKIyJgEkol5Q--fgY"
+uri = "file://attached_assets/emojis/kirby_cool.png"
+type = "image"
+title = "kirby cool emoji"
+
+[[generated]]
+id = "P1qVUFG7Ov75cXLOj4t-L"
+uri = "file://attached_assets/emojis/kirby_puffed.png"
+type = "image"
+title = "kirby puffed emoji"
+
+[[generated]]
+id = "jMrWZdSI2J-DmzRC45dFQ"
+uri = "file://attached_assets/emojis/kirby_sword.png"
+type = "image"
+title = "kirby sword emoji"
