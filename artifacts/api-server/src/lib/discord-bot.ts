@@ -10,14 +10,13 @@ import {
   SlashCommandBuilder,
   PermissionFlagsBits,
 } from "discord.js";
+import { eq } from "drizzle-orm";
+import { db, warningsTable } from "@workspace/db";
 import { logger } from "./logger";
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const APP_ID = "1494267274222370916";
-
-// In-memory warning store: userId -> list of { reason, date, moderator }
-const warnings = new Map<string, Array<{ reason: string; date: string; moderator: string }>>();
 
 const RULES = [
   { num: 1, title: "The Golden Gate", desc: "Keep it SFW. No explicit sexual content or 18+ media outside designated spaces." },
@@ -58,99 +57,46 @@ async function registerCommands() {
   const BAN = PermissionFlagsBits.BanMembers;
 
   const commands = [
-    // ── Info ────────────────────────────────────────────────────────────
+    new SlashCommandBuilder().setName("rules").setDescription("Show the sacred principles of /ashura").toJSON(),
+    new SlashCommandBuilder().setName("emojis").setDescription("Show all Kirby emojis available in this server").toJSON(),
+    new SlashCommandBuilder().setName("server").setDescription("Show /ashura server info and stats").toJSON(),
+    new SlashCommandBuilder().setName("welcome").setDescription("Preview the welcome DM that new members receive").toJSON(),
     new SlashCommandBuilder()
-      .setName("rules")
-      .setDescription("Show the sacred principles of /ashura")
-      .toJSON(),
-
-    new SlashCommandBuilder()
-      .setName("emojis")
-      .setDescription("Show all Kirby emojis available in this server")
-      .toJSON(),
-
-    new SlashCommandBuilder()
-      .setName("server")
-      .setDescription("Show /ashura server info and stats")
-      .toJSON(),
-
-    new SlashCommandBuilder()
-      .setName("welcome")
-      .setDescription("Preview the welcome DM that new members receive")
-      .toJSON(),
-
-    // ── Moderation ───────────────────────────────────────────────────────
-    new SlashCommandBuilder()
-      .setName("warn")
-      .setDescription("Issue a warning to a member")
-      .setDefaultMemberPermissions(MOD)
+      .setName("warn").setDescription("Issue a warning to a member").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to warn").setRequired(true))
       .addStringOption(o => o.setName("reason").setDescription("Reason for the warning").setRequired(true))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("warnings")
-      .setDescription("View all warnings for a member")
-      .setDefaultMemberPermissions(MOD)
+      .setName("warnings").setDescription("View all warnings for a member").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to check").setRequired(true))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("clearwarnings")
-      .setDescription("Clear all warnings for a member")
-      .setDefaultMemberPermissions(MOD)
+      .setName("clearwarnings").setDescription("Clear all warnings for a member").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to clear").setRequired(true))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("timeout")
-      .setDescription("Timeout (mute) a member for a set duration")
-      .setDefaultMemberPermissions(MOD)
+      .setName("timeout").setDescription("Timeout (mute) a member for a set duration").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to timeout").setRequired(true))
-      .addIntegerOption(o =>
-        o.setName("minutes")
-          .setDescription("Duration in minutes (max 40320 = 4 weeks)")
-          .setRequired(true)
-          .setMinValue(1)
-          .setMaxValue(40320)
-      )
+      .addIntegerOption(o => o.setName("minutes").setDescription("Duration in minutes (max 40320 = 4 weeks)").setRequired(true).setMinValue(1).setMaxValue(40320))
       .addStringOption(o => o.setName("reason").setDescription("Reason").setRequired(false))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("untimeout")
-      .setDescription("Remove timeout from a member")
-      .setDefaultMemberPermissions(MOD)
+      .setName("untimeout").setDescription("Remove timeout from a member").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to un-timeout").setRequired(true))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("kick")
-      .setDescription("Kick a member from the server")
-      .setDefaultMemberPermissions(KICK)
+      .setName("kick").setDescription("Kick a member from the server").setDefaultMemberPermissions(KICK)
       .addUserOption(o => o.setName("user").setDescription("Member to kick").setRequired(true))
       .addStringOption(o => o.setName("reason").setDescription("Reason").setRequired(false))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("ban")
-      .setDescription("Ban a member from the server")
-      .setDefaultMemberPermissions(BAN)
+      .setName("ban").setDescription("Ban a member from the server").setDefaultMemberPermissions(BAN)
       .addUserOption(o => o.setName("user").setDescription("Member to ban").setRequired(true))
       .addStringOption(o => o.setName("reason").setDescription("Reason").setRequired(false))
-      .addIntegerOption(o =>
-        o.setName("delete_days")
-          .setDescription("Days of messages to delete (0-7)")
-          .setRequired(false)
-          .setMinValue(0)
-          .setMaxValue(7)
-      )
+      .addIntegerOption(o => o.setName("delete_days").setDescription("Days of messages to delete (0–7)").setRequired(false).setMinValue(0).setMaxValue(7))
       .toJSON(),
-
     new SlashCommandBuilder()
-      .setName("unban")
-      .setDescription("Unban a user by their ID")
-      .setDefaultMemberPermissions(BAN)
+      .setName("unban").setDescription("Unban a user by their ID").setDefaultMemberPermissions(BAN)
       .addStringOption(o => o.setName("user_id").setDescription("User ID to unban").setRequired(true))
       .addStringOption(o => o.setName("reason").setDescription("Reason").setRequired(false))
       .toJSON(),
@@ -183,7 +129,6 @@ export function startDiscordBot() {
     await registerCommands();
   });
 
-  // ── Auto welcome DM ──────────────────────────────────────────────────
   client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
     if (member.guild.id !== GUILD_ID) return;
     try {
@@ -194,24 +139,25 @@ export function startDiscordBot() {
     }
   });
 
-  // ── Slash commands ───────────────────────────────────────────────────
   client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     if (!interaction.isChatInputCommand()) return;
     const { commandName } = interaction;
 
-    // /rules
     if (commandName === "rules") {
-      const embed = new EmbedBuilder()
-        .setTitle("✨ The Sacred Principles of /ashura ✨")
-        .setDescription("These are the laws of Dream Land. Violating them has consequences.")
-        .setColor(0xFF5C8D)
-        .addFields(RULES.map(r => ({ name: `${r.num}. ${r.title}`, value: r.desc, inline: false })))
-        .setFooter({ text: "Add dsc.gg/ashuracommunity to your status for a special role! ⭐" });
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("✨ The Sacred Principles of /ashura ✨")
+            .setDescription("These are the laws of Dream Land. Violating them has consequences.")
+            .setColor(0xFF5C8D)
+            .addFields(RULES.map(r => ({ name: `${r.num}. ${r.title}`, value: r.desc, inline: false })))
+            .setFooter({ text: "Add dsc.gg/ashuracommunity to your status for a special role! ⭐" }),
+        ],
+        ephemeral: true,
+      });
       return;
     }
 
-    // /emojis
     if (commandName === "emojis") {
       const guild = interaction.guild;
       if (!guild) { await interaction.reply({ content: "Server only.", ephemeral: true }); return; }
@@ -219,40 +165,46 @@ export function startDiscordBot() {
         .filter(e => e.name?.startsWith("kirby_"))
         .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
       const list = kirbyEmojis.map(e => `${e.toString()} \`:${e.name}:\``).join("\n") || "No Kirby emojis found.";
-      const embed = new EmbedBuilder()
-        .setTitle("🌟 Kirby Emojis — /ashura")
-        .setDescription(`Use these anywhere in the server!\n\n${list}`)
-        .setColor(0xFF5C8D)
-        .setFooter({ text: `${kirbyEmojis.size} Kirby emojis available` });
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("🌟 Kirby Emojis — /ashura")
+            .setDescription(`Use these anywhere in the server!\n\n${list}`)
+            .setColor(0xFF5C8D)
+            .setFooter({ text: `${kirbyEmojis.size} Kirby emojis available` }),
+        ],
+        ephemeral: true,
+      });
       return;
     }
 
-    // /server
     if (commandName === "server") {
       const guild = interaction.guild;
       if (!guild) { await interaction.reply({ content: "Server only.", ephemeral: true }); return; }
       await guild.fetch();
-      const embed = new EmbedBuilder()
-        .setTitle(`⭐ ${guild.name}`)
-        .setDescription("Welcome to Dream Land — a community built on respect, creativity, and good vibes.")
-        .setColor(0xFF5C8D)
-        .setThumbnail(guild.iconURL({ size: 256 }))
-        .addFields(
-          { name: "👥 Members", value: guild.memberCount.toLocaleString(), inline: true },
-          { name: "📅 Created", value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: true },
-          { name: "🔒 Verification", value: ["None", "Low", "Medium", "High", "Very High"][guild.verificationLevel] ?? "Unknown", inline: true },
-          { name: "🎭 Roles", value: guild.roles.cache.size.toString(), inline: true },
-          { name: "💬 Channels", value: guild.channels.cache.size.toString(), inline: true },
-          { name: "😄 Emojis", value: guild.emojis.cache.size.toString(), inline: true },
-          { name: "🔗 Join", value: "[dsc.gg/ashura](https://dsc.gg/ashura)", inline: false },
-        )
-        .setFooter({ text: "Owned by RealAsh • Created by Alpy" });
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`⭐ ${guild.name}`)
+            .setDescription("Welcome to Dream Land — a community built on respect, creativity, and good vibes.")
+            .setColor(0xFF5C8D)
+            .setThumbnail(guild.iconURL({ size: 256 }))
+            .addFields(
+              { name: "👥 Members", value: guild.memberCount.toLocaleString(), inline: true },
+              { name: "📅 Created", value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: true },
+              { name: "🔒 Verification", value: ["None", "Low", "Medium", "High", "Very High"][guild.verificationLevel] ?? "Unknown", inline: true },
+              { name: "🎭 Roles", value: guild.roles.cache.size.toString(), inline: true },
+              { name: "💬 Channels", value: guild.channels.cache.size.toString(), inline: true },
+              { name: "😄 Emojis", value: guild.emojis.cache.size.toString(), inline: true },
+              { name: "🔗 Join", value: "[dsc.gg/ashura](https://dsc.gg/ashura)", inline: false },
+            )
+            .setFooter({ text: "Owned by RealAsh • Created by Alpy" }),
+        ],
+        ephemeral: true,
+      });
       return;
     }
 
-    // /welcome
     if (commandName === "welcome") {
       const member = interaction.member as GuildMember;
       await interaction.reply({
@@ -263,16 +215,19 @@ export function startDiscordBot() {
       return;
     }
 
-    // /warn
     if (commandName === "warn") {
       const target = interaction.options.getMember("user") as GuildMember | null;
       const reason = interaction.options.getString("reason") ?? "No reason provided";
       if (!target) { await interaction.reply({ content: "User not found.", ephemeral: true }); return; }
 
-      const entry = { reason, date: new Date().toISOString(), moderator: interaction.user.username };
-      const userWarnings = warnings.get(target.id) ?? [];
-      userWarnings.push(entry);
-      warnings.set(target.id, userWarnings);
+      await db.insert(warningsTable).values({
+        userId: target.id,
+        username: target.user.username,
+        reason,
+        moderator: interaction.user.username,
+      });
+
+      const allWarnings = await db.select().from(warningsTable).where(eq(warningsTable.userId, target.id));
 
       try {
         await target.send({
@@ -281,12 +236,12 @@ export function startDiscordBot() {
               .setTitle("⚠️ You have been warned in /ashura")
               .setDescription(`**Reason:** ${reason}`)
               .setColor(0xFFD700)
-              .addFields({ name: "Total warnings", value: userWarnings.length.toString(), inline: true })
-              .setFooter({ text: "Please review the server rules with /rules" })
+              .addFields({ name: "Total warnings", value: allWarnings.length.toString(), inline: true })
+              .setFooter({ text: "Review the server rules with /rules" })
               .setTimestamp(),
           ],
         });
-      } catch { /* user has DMs off */ }
+      } catch { /* DMs off */ }
 
       await interaction.reply({
         embeds: [
@@ -296,7 +251,7 @@ export function startDiscordBot() {
             .addFields(
               { name: "User", value: `${target.user.username} (${target.id})`, inline: true },
               { name: "Reason", value: reason, inline: false },
-              { name: "Total warnings", value: userWarnings.length.toString(), inline: true },
+              { name: "Total warnings", value: allWarnings.length.toString(), inline: true },
             )
             .setFooter({ text: `Moderated by ${interaction.user.username}` })
             .setTimestamp(),
@@ -306,36 +261,46 @@ export function startDiscordBot() {
       return;
     }
 
-    // /warnings
     if (commandName === "warnings") {
       const target = interaction.options.getUser("user");
       if (!target) { await interaction.reply({ content: "User not found.", ephemeral: true }); return; }
-      const userWarnings = warnings.get(target.id) ?? [];
+
+      const userWarnings = await db.select().from(warningsTable).where(eq(warningsTable.userId, target.id));
+
       if (userWarnings.length === 0) {
         await interaction.reply({ content: `✅ **${target.username}** has no warnings.`, ephemeral: true });
         return;
       }
-      const embed = new EmbedBuilder()
-        .setTitle(`⚠️ Warnings for ${target.username}`)
-        .setColor(0xFFD700)
-        .setDescription(userWarnings.map((w, i) =>
-          `**${i + 1}.** ${w.reason}\n> <t:${Math.floor(new Date(w.date).getTime() / 1000)}:R> by **${w.moderator}**`
-        ).join("\n\n"))
-        .setFooter({ text: `${userWarnings.length} total warning(s)` });
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`⚠️ Warnings for ${target.username}`)
+            .setColor(0xFFD700)
+            .setDescription(
+              userWarnings.map((w, i) =>
+                `**${i + 1}.** ${w.reason}\n> <t:${Math.floor(w.createdAt.getTime() / 1000)}:R> by **${w.moderator}**`
+              ).join("\n\n")
+            )
+            .setFooter({ text: `${userWarnings.length} total warning(s)` }),
+        ],
+        ephemeral: true,
+      });
       return;
     }
 
-    // /clearwarnings
     if (commandName === "clearwarnings") {
       const target = interaction.options.getUser("user");
       if (!target) { await interaction.reply({ content: "User not found.", ephemeral: true }); return; }
-      warnings.delete(target.id);
-      await interaction.reply({ content: `✅ Cleared all warnings for **${target.username}**.`, ephemeral: true });
+
+      const deleted = await db.delete(warningsTable).where(eq(warningsTable.userId, target.id)).returning();
+      await interaction.reply({
+        content: `✅ Cleared **${deleted.length}** warning(s) for **${target.username}**.`,
+        ephemeral: true,
+      });
       return;
     }
 
-    // /timeout
     if (commandName === "timeout") {
       const target = interaction.options.getMember("user") as GuildMember | null;
       const minutes = interaction.options.getInteger("minutes", true);
@@ -358,13 +323,12 @@ export function startDiscordBot() {
           ],
           ephemeral: true,
         });
-      } catch (err) {
-        await interaction.reply({ content: `❌ Could not timeout this user. Do I have permission and is their role below mine?`, ephemeral: true });
+      } catch {
+        await interaction.reply({ content: "❌ Could not timeout this user. Check my role position and permissions.", ephemeral: true });
       }
       return;
     }
 
-    // /untimeout
     if (commandName === "untimeout") {
       const target = interaction.options.getMember("user") as GuildMember | null;
       if (!target) { await interaction.reply({ content: "User not found.", ephemeral: true }); return; }
@@ -372,12 +336,11 @@ export function startDiscordBot() {
         await target.timeout(null);
         await interaction.reply({ content: `✅ Timeout removed from **${target.user.username}**.`, ephemeral: true });
       } catch {
-        await interaction.reply({ content: `❌ Could not remove timeout.`, ephemeral: true });
+        await interaction.reply({ content: "❌ Could not remove timeout.", ephemeral: true });
       }
       return;
     }
 
-    // /kick
     if (commandName === "kick") {
       const target = interaction.options.getMember("user") as GuildMember | null;
       const reason = interaction.options.getString("reason") ?? "No reason provided";
@@ -389,8 +352,7 @@ export function startDiscordBot() {
             new EmbedBuilder()
               .setTitle("👢 You have been kicked from /ashura")
               .setDescription(`**Reason:** ${reason}\n\nYou may rejoin at [dsc.gg/ashura](https://dsc.gg/ashura).`)
-              .setColor(0xFF6EB4)
-              .setTimestamp(),
+              .setColor(0xFF6EB4).setTimestamp(),
           ],
         }).catch(() => {});
         await target.kick(reason);
@@ -414,11 +376,10 @@ export function startDiscordBot() {
       return;
     }
 
-    // /ban
     if (commandName === "ban") {
       const target = interaction.options.getMember("user") as GuildMember | null;
       const reason = interaction.options.getString("reason") ?? "No reason provided";
-      const deleteDays = interaction.options.getInteger("delete_days") ?? 0;
+      const deleteDays = (interaction.options.getInteger("delete_days") ?? 0) as 0|1|2|3|4|5|6|7;
       if (!target) { await interaction.reply({ content: "User not found.", ephemeral: true }); return; }
       if (!target.bannable) { await interaction.reply({ content: "❌ I cannot ban this user.", ephemeral: true }); return; }
       try {
@@ -427,11 +388,10 @@ export function startDiscordBot() {
             new EmbedBuilder()
               .setTitle("🔨 You have been banned from /ashura")
               .setDescription(`**Reason:** ${reason}`)
-              .setColor(0xFF5C5C)
-              .setTimestamp(),
+              .setColor(0xFF5C5C).setTimestamp(),
           ],
         }).catch(() => {});
-        await target.ban({ reason, deleteMessageDays: deleteDays as 0|1|2|3|4|5|6|7 });
+        await target.ban({ reason, deleteMessageDays: deleteDays });
         await interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -453,7 +413,6 @@ export function startDiscordBot() {
       return;
     }
 
-    // /unban
     if (commandName === "unban") {
       const userId = interaction.options.getString("user_id", true);
       const reason = interaction.options.getString("reason") ?? "No reason provided";
