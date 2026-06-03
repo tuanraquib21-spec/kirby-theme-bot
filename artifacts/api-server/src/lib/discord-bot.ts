@@ -261,7 +261,7 @@ export function startDiscordBot() {
             .addFields(RULES.map(r => ({ name: `${r.num}. ${r.title}`, value: r.desc, inline: false })))
             .setFooter({ text: "Add dsc.gg/ashuracommunity to your status for a special role! ⭐" }),
         ],
-        ephemeral: true,
+        ephemeral: false,
       });
       return;
     }
@@ -281,7 +281,7 @@ export function startDiscordBot() {
             .setColor(0xFF5C8D)
             .setFooter({ text: `${kirbyEmojis.size} Kirby emojis available` }),
         ],
-        ephemeral: true,
+        ephemeral: false,
       });
       return;
     }
@@ -308,7 +308,7 @@ export function startDiscordBot() {
             )
             .setFooter({ text: "Owned by RealAsh • Created by Alpy" }),
         ],
-        ephemeral: true,
+        ephemeral: false,
       });
       return;
     }
@@ -318,7 +318,7 @@ export function startDiscordBot() {
       await interaction.reply({
         content: "📬 Preview of the welcome DM new members receive:",
         embeds: [buildWelcomeEmbed(member)],
-        ephemeral: true,
+        ephemeral: false,
       });
       return;
     }
