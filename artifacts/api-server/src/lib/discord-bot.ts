@@ -248,7 +248,7 @@ export function startDiscordBot() {
 
   client.once(Events.ClientReady, async (c) => {
     logger.info({ tag: c.user.tag }, "Discord bot connected");
-    await setupDatabase();
+    setupDatabase().catch(err => logger.error({ err }, "DB setup failed — tables may not exist yet"));
     await registerCommands();
     setInterval(() => updateAllLeaderboards(client), 10_000);
   });
