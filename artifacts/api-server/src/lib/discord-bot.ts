@@ -13,12 +13,12 @@ import {
   ChannelType,
 } from "discord.js";
 import { eq, sql, desc } from "drizzle-orm";
-import { db, pool, warningsTable, messageCountsTable, liveLeaderboardTable } from "@workspace/db";
+import { db, warningsTable, messageCountsTable, liveLeaderboardTable } from "@workspace/db";
 import { logger } from "./logger";
 
 async function setupDatabase() {
   try {
-    await pool.query(`
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS warnings (
         id SERIAL PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -26,7 +26,9 @@ async function setupDatabase() {
         reason TEXT NOT NULL,
         moderator TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
+      )
+    `);
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS message_counts (
         id SERIAL PRIMARY KEY,
         guild_id TEXT NOT NULL,
@@ -35,18 +37,21 @@ async function setupDatabase() {
         count INTEGER NOT NULL DEFAULT 0,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE (guild_id, user_id)
-      );
+      )
+    `);
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS live_leaderboard_config (
         id SERIAL PRIMARY KEY,
         guild_id TEXT NOT NULL UNIQUE,
         channel_id TEXT NOT NULL,
         message_id TEXT,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
+      )
     `);
     logger.info("Database tables ready");
   } catch (err) {
     logger.error({ err }, "Failed to create database tables");
+    throw err;
   }
 }
 
