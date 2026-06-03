@@ -391,7 +391,8 @@ export function startDiscordBot() {
           });
         } catch (err) {
           logger.error({ err }, "Failed to set up live leaderboard");
-          await interaction.editReply({ content: "❌ Failed to set up leaderboard. Make sure I have permission to send messages in that channel." });
+          const msg = err instanceof Error ? err.message : String(err);
+          await interaction.editReply({ content: `❌ Error: \`${msg.slice(0, 200)}\`` });
         }
         return;
       }
