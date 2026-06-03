@@ -6,12 +6,14 @@ import {
   Routes,
   type Interaction,
   type GuildMember,
+  type TextChannel,
   EmbedBuilder,
   SlashCommandBuilder,
   PermissionFlagsBits,
+  ChannelType,
 } from "discord.js";
-import { eq } from "drizzle-orm";
-import { db, warningsTable } from "@workspace/db";
+import { eq, sql, desc } from "drizzle-orm";
+import { db, warningsTable, messageCountsTable, liveLeaderboardTable } from "@workspace/db";
 import { logger } from "./logger";
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -28,6 +30,8 @@ const RULES = [
   { num: 7, title: "The Great Taboo", desc: "Sexual jokes involving themes of violation or lack of consent are permanently forbidden." },
   { num: 8, title: "The Code of Originality", desc: "Do not replicate, plagiarize, or heavily take inspiration from ashura." },
 ];
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 function buildWelcomeEmbed(member: GuildMember) {
   return new EmbedBuilder()
@@ -48,6 +52,64 @@ function buildWelcomeEmbed(member: GuildMember) {
     .setTimestamp();
 }
 
+async function buildLeaderboardEmbed(guildId: string, guild: Awaited<ReturnType<Client["guilds"]["fetch"]>> | ReturnType<Client["guilds"]["resolve"]>) {
+  const top = await db
+    .select()
+    .from(messageCountsTable)
+    .where(eq(messageCountsTable.guildId, guildId))
+    .orderBy(desc(messageCountsTable.count))
+    .limit(10);
+
+  const rows = top.map((row, i) => {
+    const medal = MEDALS[i] ?? `**#${i + 1}**`;
+    return `${medal} **${row.username}** — ${row.count.toLocaleString()} messages`;
+  });
+
+  return new EmbedBuilder()
+    .setTitle("📊 /ashura Message Leaderboard")
+    .setDescription(rows.length > 0 ? rows.join("\n") : "No messages tracked yet.")
+    .setColor(0xFF5C8D)
+    .setFooter({ text: "Updates every 10 seconds • Keep chatting!" })
+    .setTimestamp();
+}
+
+async function updateAllLeaderboards(client: Client) {
+  try {
+    const configs = await db.select().from(liveLeaderboardTable);
+    for (const config of configs) {
+      try {
+        const guild = client.guilds.resolve(config.guildId);
+        if (!guild) continue;
+
+        const embed = await buildLeaderboardEmbed(config.guildId, guild);
+        const channel = guild.channels.resolve(config.channelId) as TextChannel | null;
+        if (!channel) continue;
+
+        if (config.messageId) {
+          try {
+            const msg = await channel.messages.fetch(config.messageId);
+            await msg.edit({ embeds: [embed] });
+          } catch {
+            const msg = await channel.send({ embeds: [embed] });
+            await db.update(liveLeaderboardTable)
+              .set({ messageId: msg.id, updatedAt: new Date() })
+              .where(eq(liveLeaderboardTable.guildId, config.guildId));
+          }
+        } else {
+          const msg = await channel.send({ embeds: [embed] });
+          await db.update(liveLeaderboardTable)
+            .set({ messageId: msg.id, updatedAt: new Date() })
+            .where(eq(liveLeaderboardTable.guildId, config.guildId));
+        }
+      } catch (err) {
+        logger.error({ err, guildId: config.guildId }, "Failed to update leaderboard for guild");
+      }
+    }
+  } catch (err) {
+    logger.error({ err }, "Failed to fetch leaderboard configs");
+  }
+}
+
 async function registerCommands() {
   if (!TOKEN || !GUILD_ID) return;
   const rest = new REST().setToken(TOKEN);
@@ -61,6 +123,26 @@ async function registerCommands() {
     new SlashCommandBuilder().setName("emojis").setDescription("Show all Kirby emojis available in this server").toJSON(),
     new SlashCommandBuilder().setName("server").setDescription("Show /ashura server info and stats").toJSON(),
     new SlashCommandBuilder().setName("welcome").setDescription("Preview the welcome DM that new members receive").toJSON(),
+    new SlashCommandBuilder().setName("leaderboard").setDescription("Show the top chatters in this server").toJSON(),
+    new SlashCommandBuilder()
+      .setName("liveleaderboard")
+      .setDescription("Set up a live auto-updating message leaderboard")
+      .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+      .addSubcommand(sub =>
+        sub.setName("set")
+          .setDescription("Set the channel for the live leaderboard")
+          .addChannelOption(opt =>
+            opt.setName("channel")
+              .setDescription("The channel to post the leaderboard in")
+              .addChannelTypes(ChannelType.GuildText)
+              .setRequired(true)
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName("disable")
+          .setDescription("Stop the live leaderboard")
+      )
+      .toJSON(),
     new SlashCommandBuilder()
       .setName("warn").setDescription("Issue a warning to a member").setDefaultMemberPermissions(MOD)
       .addUserOption(o => o.setName("user").setDescription("Member to warn").setRequired(true))
@@ -121,12 +203,38 @@ export function startDiscordBot() {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildEmojisAndStickers,
       GatewayIntentBits.GuildMembers,
+      GatewayIntentBits.GuildMessages,
     ],
   });
 
   client.once(Events.ClientReady, async (c) => {
     logger.info({ tag: c.user.tag }, "Discord bot connected");
     await registerCommands();
+    setInterval(() => updateAllLeaderboards(client), 10_000);
+  });
+
+  client.on(Events.MessageCreate, async (message) => {
+    if (message.author.bot || !message.guildId) return;
+    try {
+      await db
+        .insert(messageCountsTable)
+        .values({
+          guildId: message.guildId,
+          userId: message.author.id,
+          username: message.author.username,
+          count: 1,
+        })
+        .onConflictDoUpdate({
+          target: [messageCountsTable.guildId, messageCountsTable.userId],
+          set: {
+            count: sql`${messageCountsTable.count} + 1`,
+            username: message.author.username,
+            updatedAt: new Date(),
+          },
+        });
+    } catch (err) {
+      logger.error({ err }, "Failed to track message count");
+    }
   });
 
   client.on(Events.GuildMemberAdd, async (member: GuildMember) => {
@@ -213,6 +321,47 @@ export function startDiscordBot() {
         ephemeral: true,
       });
       return;
+    }
+
+    if (commandName === "leaderboard") {
+      const guild = interaction.guild;
+      if (!guild) { await interaction.reply({ content: "Server only.", ephemeral: true }); return; }
+      const embed = await buildLeaderboardEmbed(guild.id, guild);
+      await interaction.reply({ embeds: [embed], ephemeral: false });
+      return;
+    }
+
+    if (commandName === "liveleaderboard") {
+      const sub = interaction.options.getSubcommand();
+      const guild = interaction.guild;
+      if (!guild) { await interaction.reply({ content: "Server only.", ephemeral: true }); return; }
+
+      if (sub === "set") {
+        const channel = interaction.options.getChannel("channel") as TextChannel;
+        await interaction.deferReply({ ephemeral: true });
+
+        const embed = await buildLeaderboardEmbed(guild.id, guild);
+        const msg = await channel.send({ embeds: [embed] });
+
+        await db
+          .insert(liveLeaderboardTable)
+          .values({ guildId: guild.id, channelId: channel.id, messageId: msg.id })
+          .onConflictDoUpdate({
+            target: liveLeaderboardTable.guildId,
+            set: { channelId: channel.id, messageId: msg.id, updatedAt: new Date() },
+          });
+
+        await interaction.editReply({
+          content: `✅ Live leaderboard set up in ${channel.toString()}! It will update every 10 seconds.`,
+        });
+        return;
+      }
+
+      if (sub === "disable") {
+        await db.delete(liveLeaderboardTable).where(eq(liveLeaderboardTable.guildId, guild.id));
+        await interaction.reply({ content: "✅ Live leaderboard disabled.", ephemeral: true });
+        return;
+      }
     }
 
     if (commandName === "warn") {
