@@ -13,8 +13,42 @@ import {
   ChannelType,
 } from "discord.js";
 import { eq, sql, desc } from "drizzle-orm";
-import { db, warningsTable, messageCountsTable, liveLeaderboardTable } from "@workspace/db";
+import { db, pool, warningsTable, messageCountsTable, liveLeaderboardTable } from "@workspace/db";
 import { logger } from "./logger";
+
+async function setupDatabase() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS warnings (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        username TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        moderator TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS message_counts (
+        id SERIAL PRIMARY KEY,
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        username TEXT NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (guild_id, user_id)
+      );
+      CREATE TABLE IF NOT EXISTS live_leaderboard_config (
+        id SERIAL PRIMARY KEY,
+        guild_id TEXT NOT NULL UNIQUE,
+        channel_id TEXT NOT NULL,
+        message_id TEXT,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    logger.info("Database tables ready");
+  } catch (err) {
+    logger.error({ err }, "Failed to create database tables");
+  }
+}
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
@@ -209,6 +243,7 @@ export function startDiscordBot() {
 
   client.once(Events.ClientReady, async (c) => {
     logger.info({ tag: c.user.tag }, "Discord bot connected");
+    await setupDatabase();
     await registerCommands();
     setInterval(() => updateAllLeaderboards(client), 10_000);
   });
@@ -338,22 +373,26 @@ export function startDiscordBot() {
 
       if (sub === "set") {
         const channel = interaction.options.getChannel("channel") as TextChannel;
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ ephemeral: false });
+        try {
+          const embed = await buildLeaderboardEmbed(guild.id, guild);
+          const msg = await channel.send({ embeds: [embed] });
 
-        const embed = await buildLeaderboardEmbed(guild.id, guild);
-        const msg = await channel.send({ embeds: [embed] });
+          await db
+            .insert(liveLeaderboardTable)
+            .values({ guildId: guild.id, channelId: channel.id, messageId: msg.id })
+            .onConflictDoUpdate({
+              target: liveLeaderboardTable.guildId,
+              set: { channelId: channel.id, messageId: msg.id, updatedAt: new Date() },
+            });
 
-        await db
-          .insert(liveLeaderboardTable)
-          .values({ guildId: guild.id, channelId: channel.id, messageId: msg.id })
-          .onConflictDoUpdate({
-            target: liveLeaderboardTable.guildId,
-            set: { channelId: channel.id, messageId: msg.id, updatedAt: new Date() },
+          await interaction.editReply({
+            content: `✅ Live leaderboard set up in ${channel.toString()}! Updates every 10 seconds.`,
           });
-
-        await interaction.editReply({
-          content: `✅ Live leaderboard set up in ${channel.toString()}! It will update every 10 seconds.`,
-        });
+        } catch (err) {
+          logger.error({ err }, "Failed to set up live leaderboard");
+          await interaction.editReply({ content: "❌ Failed to set up leaderboard. Make sure I have permission to send messages in that channel." });
+        }
         return;
       }
 
